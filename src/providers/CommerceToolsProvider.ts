@@ -1,0 +1,105 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { createClient } from '@commercetools/sdk-client';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { createAuthMiddlewareForClientCredentialsFlow } from '@commercetools/sdk-middleware-auth';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { createHttpMiddleware } from '@commercetools/sdk-middleware-http';
+import {
+  Cart,
+  createApiBuilderFromCtpClient
+} from '@commercetools/typescript-sdk';
+import { ByProjectKeyRequestBuilder } from '@commercetools/typescript-sdk/dist/typings/generated/client/by-project-key-request-builder';
+import fetch from 'node-fetch';
+import { CartDetails } from 'types/cart-details';
+
+/**
+ * Handle all communication with the commerce tools
+ */
+export class CommerceToolsProvider {
+  private api: ByProjectKeyRequestBuilder;
+
+  constructor(env: { [key: string]: string }) {
+    const {
+      CTP_PROJECT_KEY,
+      CTP_CLIENT_SECRET,
+      CTP_CLIENT_ID,
+      CTP_AUTH_URL,
+      CTP_API_URL,
+      CTP_SCOPES,
+    } = env;
+
+    const projectKey = CTP_PROJECT_KEY;
+
+    const authMiddleware = createAuthMiddlewareForClientCredentialsFlow({
+      host: CTP_AUTH_URL,
+      projectKey,
+      credentials: {
+        clientId: CTP_CLIENT_ID,
+        clientSecret: CTP_CLIENT_SECRET,
+      },
+      scopes: [CTP_SCOPES],
+      fetch,
+    });
+    const httpMiddleware = createHttpMiddleware({
+      host: CTP_API_URL,
+      fetch,
+    });
+    const client = createClient({
+      middlewares: [authMiddleware, httpMiddleware],
+    });
+
+    // Create an API root from API builder of commercetools platform client
+    const apiRoot = createApiBuilderFromCtpClient(client);
+
+    this.api = apiRoot.withProjectKey({ projectKey });
+  }
+
+  async getCart(cartId: string): Promise<Cart> {
+    console.log('CommerceToolsProvider: Getting Cart...');
+
+    const res = await this.api
+      .carts()
+      .withId({ ID: cartId })
+      .get()
+      .execute();
+
+    return res.body;
+  }
+
+  async createCart(cartDetails: CartDetails): Promise<Cart> {
+    console.log('CommerceToolsProvider: Creating Cart...');
+
+    const res = await this.api
+      .carts()
+      .post({
+        body: {
+          currency: cartDetails.currency,
+          taxMode: 'Disabled',
+          lineItems: cartDetails.cartItems,
+        },
+      })
+      .execute();
+
+    return res.body;
+  }
+
+  async updateCart(cart: Cart, cartUpdateActions: any[]): Promise<Cart> {
+    console.log('CommerceToolsProvider: Updating Cart...');
+    const res = await this.api
+      .carts()
+      .withId({ ID: cart.id })
+      .post({
+        body: {
+          version: cart.version,
+          actions: cartUpdateActions,
+        }
+      })
+      .execute();
+
+    return res.body;
+  }
+
+}
