@@ -1,11 +1,22 @@
 import { Cart } from '@commercetools/typescript-sdk';
 import { CartDetails, CartLineItems, AddressDetails } from '../types/cart-details';
 import { CommerceToolsProvider } from './CommerceToolsProvider';
+import { Money } from '@commercetools/typescript-sdk/dist/typings/generated/models/common';
+import {
+  ExternalLineItemTotalPrice,
+  ItemShippingDetailsDraft
+} from '@commercetools/typescript-sdk/dist/typings/generated/models/cart';
 
 export class CartProvider {
   constructor(
     private readonly ctp: CommerceToolsProvider
   ) {}
+
+  getCart(cartId: string): Promise<Cart> {
+    console.log('Get Cart by Id');
+
+    return this.ctp.getCart(cartId);
+  }
 
   async createCart(cartDetails: CartDetails): Promise<Cart> {
       console.log('Cart Provider: Create Cart Invoking...');
@@ -24,7 +35,7 @@ export class CartProvider {
         return {
           action: 'changeLineItemQuantity',
           lineItemId: existingLineItem.id,
-          quantity: existingLineItem.quantity + lineItem.quantity
+          quantity: lineItem.quantity
         };
       }
       return {
@@ -33,7 +44,13 @@ export class CartProvider {
         quantity: lineItem.quantity
       };
     });
-    return this.ctp.updateCart(existingCart, updateActions);
+    const removeItemActions = existingCart.lineItems
+      .filter((lineItem) => !cartLineItems.items.find((item) => lineItem.variant.sku === item.sku))
+      .map((lineItem) => ({
+        action: 'removeLineItem',
+        lineItemId: lineItem.id,
+      }));
+    return this.ctp.updateCart(existingCart, [...updateActions,...removeItemActions,]);
   }
 
   async addDiscountCode(cartId: string, discountCode: string): Promise<Cart> {

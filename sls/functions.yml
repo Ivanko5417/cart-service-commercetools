@@ -6,7 +6,7 @@ createCart:
         method: post
         path: carts
         cors: true
-        private: true
+        private: false
 addLineItem:
   handler: src/handlers/addLineItem.handler
   name: ${self:custom.namePrefix}-line-items-handler
@@ -15,7 +15,7 @@ addLineItem:
         method: patch
         path: carts/{id}/lineitems
         cors: true
-        private: true
+        private: false
 addDiscountCode:
   handler: src/handlers/addDiscountCode.handler
   name: ${self:custom.namePrefix}-discount-code-handler
@@ -24,7 +24,7 @@ addDiscountCode:
         method: post
         path: carts/{id}/discountcodes
         cors: true
-        private: true
+        private: false
 setShippingAddress:
   handler: src/handlers/setShippingAddress.handler
   name: ${self:custom.namePrefix}-sh-address-handler
@@ -33,7 +33,7 @@ setShippingAddress:
         method: post
         path: carts/{id}/shippingaddress
         cors: true
-        private: true
+        private: false
 setShippingMethod:
   handler: src/handlers/setShippingMethod.handler
   name: ${self:custom.namePrefix}-sh-method-handler
@@ -42,7 +42,7 @@ setShippingMethod:
         method: post
         path: carts/{id}/shippingmethod
         cors: true
-        private: true
+        private: false
 setPaymentMethod:
   handler: src/handlers/setPaymentMethod.handler
   name: ${self:custom.namePrefix}-p-method-handler
@@ -51,4 +51,13 @@ setPaymentMethod:
         method: post
         path: carts/{id}/paymentmethod
         cors: true
-        private: true
+        private: false
+getCart:
+  handler: src/handlers/getCart.handler
+  name: ${self:custom.namePrefix}-get-cart-handler
+  events:
+    - http:
+        method: get
+        path: carts/{id}
+        cors: true
+        private: false
